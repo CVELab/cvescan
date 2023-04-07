@@ -1,0 +1,57 @@
+#!/usr/bin/env python
+"""
+file: repo_deep_dive
+author: adh
+created_at: 9/2/21 2:58 PM
+"""
+import argparse
+import logging
+import labyrinth
+from labyrinth.repo_processor import process_modulo, set_max_age
+import labyrinth.config as cfg
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+hdlr = logging.StreamHandler()
+fmt = logging.Formatter("%(levelname)s %(name)s - %(message)s")
+hdlr.setFormatter(fmt)
+logger.addHandler(hdlr)
+
+_MOD = None
+_DIVISOR = 100
+_MAX_AGE_SEC = 4 * 3600  # wait four hours between deep dives
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Process a set of git repos from a summary and look for patterns in all files within it"
+    )
+
+    parser.add_argument("--mod", action="store", type=int, default=_MOD)
+    parser.add_argument("--divisor", action="store", type=int, default=_DIVISOR)
+    parser.add_argument(
+        "--results_dir", action="store", type=str, default=(cfg.SEARCH_RESULTS_HOME)
+    )
+    parser.add_argument("--token", action="store", type=str, default=None)
+    parser.add_argument("--max_age", action="store", type=int, default=_MAX_AGE_SEC)
+
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("--verbose", "-v", action="store_true", default=False)
+    group.add_argument("--debug", "-d", action="store_true", default=False)
+
+    args = parser.parse_args()
+
+    if args.verbose:
+        labyrinth.VERBOSE = True
+        logger.setLevel(logging.INFO)
+        logger.info("log level: INFO")
+    if args.debug:
+        labyrinth.DEBUG = True
+        logger.setLevel(logging.DEBUG)
+        logger.debug("log level: DEBUG")
+
+    if args.token is not None:
+        labyrinth.GH_TOKEN = args.token
+
+    set_max_age(args.max_age)
+
+    process_modulo(args.results_dir, args.mod, args.divisor)
